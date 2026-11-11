@@ -1,0 +1,6 @@
+{
+  "name": "Atelier Ref — Студия референсов для художников",
+  "description": "Минималистичный генератор случайных референсов для художников с мгновенным переключением, поддержкой встроенной папки и пакетной загрузки.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
