@@ -101,10 +101,10 @@ const DEFAULT_SKETCH_SETTINGS: SketchSettings = {
 };
 
 export default function App() {
-  const [folderItems, setFolderItems] = useState<ReferenceItem[]>(DEFAULT_FOLDER_ITEMS);
+  const [folderItems, setFolderItems] = useState<ReferenceItem[]>([]);
   const [uploadedItems, setUploadedItems] = useState<ReferenceItem[]>([]);
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(true);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -178,53 +178,117 @@ export default function App() {
     return filterReferences(combined, sourceFilter);
   }, [folderItems, uploadedItems, sourceFilter]);
 
-  // Load folder items from dynamic API (if Node/Vite dev server is active) or static manifest.json (on GitHub Pages / static hostings)
+  // Automatically scan GitHub repository folder (public/references & references), manifest.json, or local API
   const loadFolderReferences = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      if (import.meta.env.DEV) {
+      // 1. Auto-scan GitHub repository folders directly via GitHub Contents API (no manifest.json required!)
+      try {
+        let owner = 'sdvgman1337';
+        let repo = 'DrawWheel';
+        if (typeof window !== 'undefined' && window.location.hostname.endsWith('.github.io')) {
+          owner = window.location.hostname.split('.')[0] || owner;
+          const parts = window.location.pathname.split('/').filter(Boolean);
+          if (parts.length > 0) {
+            repo = parts[0];
+          }
+        }
+
+        const folderPaths = ['public/references', 'references'];
+        const discovered: ReferenceItem[] = [];
+        const seenNames = new Set<string>();
+
+        for (const folderPath of folderPaths) {
+          const apiRes = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/contents/${folderPath}`,
+            { cache: 'no-store' }
+          ).catch(() => null);
+
+          if (apiRes && apiRes.ok) {
+            const entries = await apiRes.json();
+            if (Array.isArray(entries)) {
+              for (const entry of entries) {
+                if (
+                  entry &&
+                  entry.type === 'file' &&
+                  typeof entry.name === 'string' &&
+                  /\.(jpe?g|png|webp|avif|gif|svg)$/i.test(entry.name) &&
+                  !seenNames.has(entry.name)
+                ) {
+                  seenNames.add(entry.name);
+                  const cleanTitle = entry.name
+                    .replace(/^[0-9]+_/, '')
+                    .replace(/\.[^/.]+$/, '')
+                    .replace(/[-_]/g, ' ');
+                  const encodedPath = folderPath + '/' + encodeURIComponent(entry.name);
+                  discovered.push({
+                    id: `folder-${entry.name}`,
+                    name: cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1),
+                    url: entry.download_url || `./${encodedPath}`,
+                    fallbackUrl: `./${encodedPath}`,
+                    source: 'folder',
+                    filename: entry.name,
+                  });
+                }
+              }
+            }
+          }
+          if (discovered.length > 0) break;
+        }
+
+        if (discovered.length > 0) {
+          setFolderItems(discovered);
+          return;
+        }
+      } catch {
+        // Fallback to manifest or local dev API
+      }
+
+      // 2. Try manifest.json in public/references or references (supporting UTF-8 BOM from Windows PowerShell)
+      const manifestUrls = ['./public/references/manifest.json', './references/manifest.json'];
+      for (const manifestUrl of manifestUrls) {
         try {
-          const res = await fetch('./api/references');
+          const res = await fetch(manifestUrl, { cache: 'no-store' });
           if (res.ok) {
-            const contentType = res.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-              const data = await res.json();
-              if (data.success && Array.isArray(data.items) && data.items.length > 0) {
-                setFolderItems(data.items);
+            const rawText = (await res.text()).replace(/^\uFEFF/, '').trim();
+            if (rawText.startsWith('{')) {
+              const manifestData = JSON.parse(rawText);
+              if (Array.isArray(manifestData.items) && manifestData.items.length > 0) {
+                setFolderItems(
+                  manifestData.items.map((item: ReferenceItem) => ({
+                    ...item,
+                    url: item.url.startsWith('/') ? `.${item.url}` : item.url,
+                  }))
+                );
                 return;
               }
             }
           }
         } catch {
-          // Fallback to manifest.json
+          // Try next manifest location
         }
       }
 
-      const manifestRes = await fetch('./references/manifest.json').catch(() => null);
-      const finalManifestRes =
-        manifestRes && manifestRes.ok
-          ? manifestRes
-          : await fetch('./public/references/manifest.json').catch(() => null);
-
-      if (finalManifestRes && finalManifestRes.ok) {
-        const manifestData = await finalManifestRes.json();
-        if (Array.isArray(manifestData.items) && manifestData.items.length > 0) {
-          setFolderItems(
-            manifestData.items.map((item: ReferenceItem) => {
-              const defaultMatch = DEFAULT_FOLDER_ITEMS.find(
-                d => d.id === item.id || d.filename === item.filename
-              );
-              return {
-                ...item,
-                url: item.url.startsWith('/') ? `.${item.url}` : item.url,
-                fallbackUrl: item.fallbackUrl || defaultMatch?.fallbackUrl,
-              };
-            })
-          );
+      // 3. In local dev mode, try local /api/references
+      if (import.meta.env.DEV) {
+        try {
+          const res = await fetch('./api/references');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+              setFolderItems(data.items);
+              return;
+            }
+          }
+        } catch {
+          // Fallback to defaults
         }
       }
+
+      setFolderItems(DEFAULT_FOLDER_ITEMS);
     } catch (err) {
       console.warn('Using built-in references list:', err);
+      setFolderItems(DEFAULT_FOLDER_ITEMS);
     } finally {
       setIsRefreshing(false);
     }
