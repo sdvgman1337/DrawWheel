@@ -5,14 +5,40 @@ import fs from 'fs';
 import {defineConfig, Plugin} from 'vite';
 
 function scanReferencesFolder() {
-  const dir = path.resolve(process.cwd(), 'public/references');
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  const publicDir = path.resolve(process.cwd(), 'public/references');
+  const rootDir = path.resolve(process.cwd(), 'references');
+
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
   }
+  if (!fs.existsSync(rootDir)) {
+    fs.mkdirSync(rootDir, { recursive: true });
+  }
+
+  // Sync any images added to root /references into /public/references
+  for (const f of fs.readdirSync(rootDir)) {
+    if (/\.(jpe?g|png|webp|avif|gif|svg)$/i.test(f)) {
+      const srcPath = path.join(rootDir, f);
+      const destPath = path.join(publicDir, f);
+      if (!fs.existsSync(destPath)) {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    }
+  }
+
   const files = fs
-    .readdirSync(dir)
+    .readdirSync(publicDir)
     .filter(f => /\.(jpe?g|png|webp|avif|gif|svg)$/i.test(f))
     .sort();
+
+  // Mirror all images from /public/references into root /references so static hosting from repo root works seamlessly
+  for (const f of files) {
+    const srcPath = path.join(publicDir, f);
+    const destPath = path.join(rootDir, f);
+    if (!fs.existsSync(destPath)) {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
 
   const items = files.map(filename => {
     const cleanTitle = filename
@@ -28,14 +54,11 @@ function scanReferencesFolder() {
     };
   });
 
-  // Always write manifest.json so static hostings (Vercel, Netlify, GitHub Pages, Apache/Nginx) work out of the box
+  // Always write manifest.json to both public/references and root references/
+  const manifestJson = JSON.stringify({ updatedAt: new Date().toISOString(), items }, null, 2);
   try {
-    const manifestPath = path.join(dir, 'manifest.json');
-    fs.writeFileSync(
-      manifestPath,
-      JSON.stringify({ updatedAt: new Date().toISOString(), items }, null, 2),
-      'utf-8'
-    );
+    fs.writeFileSync(path.join(publicDir, 'manifest.json'), manifestJson, 'utf-8');
+    fs.writeFileSync(path.join(rootDir, 'manifest.json'), manifestJson, 'utf-8');
   } catch (err) {
     console.warn('Could not write manifest.json:', err);
   }
@@ -46,8 +69,46 @@ function scanReferencesFolder() {
 function referencesFolderPlugin(): Plugin {
   return {
     name: 'vite-plugin-references',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html) {
+        return html
+          .replace(/<link[^>]*data-standalone-css[^>]*>\s*/i, '')
+          .replace(
+            /<script[^>]*data-standalone-js[^>]*><\/script>/i,
+            '<script type="module" src="/src/main.tsx"></script>'
+          );
+      },
+    },
     buildStart() {
       scanReferencesFolder();
+    },
+    closeBundle() {
+      // Copy compiled assets from dist/assets into root standalone/ so deploying root directly on GitHub Pages works without a build step
+      try {
+        const distAssetsDir = path.resolve(process.cwd(), 'dist/assets');
+        const standaloneDir = path.resolve(process.cwd(), 'standalone');
+        if (fs.existsSync(distAssetsDir)) {
+          fs.mkdirSync(standaloneDir, { recursive: true });
+          const assetFiles = fs.readdirSync(distAssetsDir);
+          const jsFile = assetFiles.find(f => f.endsWith('.js'));
+          const cssFile = assetFiles.find(f => f.endsWith('.css'));
+          if (jsFile) {
+            fs.copyFileSync(
+              path.join(distAssetsDir, jsFile),
+              path.join(standaloneDir, 'app.js')
+            );
+          }
+          if (cssFile) {
+            fs.copyFileSync(
+              path.join(distAssetsDir, cssFile),
+              path.join(standaloneDir, 'app.css')
+            );
+          }
+        }
+      } catch (err) {
+        console.warn('Could not sync standalone bundle:', err);
+      }
     },
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
@@ -88,7 +149,7 @@ function referencesFolderPlugin(): Plugin {
                 saved.push(safeName);
               }
 
-              // Update manifest.json after saving new files
+              // Update manifest.json and mirror after saving new files
               scanReferencesFolder();
 
               res.setHeader('Content-Type', 'application/json');
@@ -126,4 +187,5 @@ export default defineConfig(() => {
     },
   };
 });
+
 

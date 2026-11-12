@@ -174,24 +174,26 @@ export default function App() {
     return filterReferences(combined, sourceFilter);
   }, [folderItems, uploadedItems, sourceFilter]);
 
-  // Load folder items from dynamic API (if Node server is active) or static manifest.json (on static hostings)
+  // Load folder items from dynamic API (if Node/Vite dev server is active) or static manifest.json (on GitHub Pages / static hostings)
   const loadFolderReferences = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      try {
-        const res = await fetch('./api/references');
-        if (res.ok) {
-          const contentType = res.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const data = await res.json();
-            if (data.success && Array.isArray(data.items) && data.items.length > 0) {
-              setFolderItems(data.items);
-              return;
+      if (import.meta.env.DEV) {
+        try {
+          const res = await fetch('./api/references');
+          if (res.ok) {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+                setFolderItems(data.items);
+                return;
+              }
             }
           }
+        } catch {
+          // Fallback to manifest.json
         }
-      } catch {
-        // Static hosting without /api/references, fallback to manifest.json
       }
 
       const manifestRes = await fetch('./references/manifest.json');

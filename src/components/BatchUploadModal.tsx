@@ -61,8 +61,8 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
       };
       items.push(item);
 
-      // If user wants to save to root folder on disk, convert to base64
-      if (saveToFolderOnDisk) {
+      // If user wants to save to root folder on disk (only in local dev server), convert to base64
+      if (saveToFolderOnDisk && import.meta.env.DEV) {
         try {
           const buffer = await file.arrayBuffer();
           const base64 = btoa(
@@ -80,10 +80,10 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
     // Call onAddReferences
     await onAddReferences(items, false);
 
-    // If uploading to disk folder, send to /api/upload-to-folder
-    if (saveToFolderOnDisk && serverPayloadFiles.length > 0) {
+    // If uploading to disk folder in local dev environment, send to ./api/upload-to-folder
+    if (saveToFolderOnDisk && import.meta.env.DEV && serverPayloadFiles.length > 0) {
       try {
-        const res = await fetch('/api/upload-to-folder', {
+        const res = await fetch('./api/upload-to-folder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ files: serverPayloadFiles }),
@@ -97,7 +97,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
         setStatusMessage(`Успешно добавлено ${items.length} фото в локальную память.`);
       }
     } else {
-      setStatusMessage(`Успешно добавлено ${items.length} фото в коллекцию.`);
+      setStatusMessage(`Успешно добавлено ${items.length} фото в коллекцию браузера.`);
     }
 
     setRecentUploads(prev => [...items.slice(0, 8), ...prev]);
