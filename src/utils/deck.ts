@@ -1,4 +1,63 @@
-import { ReferenceItem, SourceFilter, DeckNavigationState } from '../types/index.ts';
+import {
+  ReferenceItem,
+  SourceFilter,
+  DeckNavigationState,
+  GridType,
+  ContrastMode,
+  ViewSettings,
+} from '../types/index.ts';
+
+export const GRID_OPTIONS: { id: GridType; label: string; shortLabel: string; description: string }[] = [
+  { id: 'none', label: 'Без сетки', shortLabel: 'Выкл', description: 'Чистый холст без направляющих' },
+  { id: 'rule-of-thirds', label: 'Правило третей (3×3)', shortLabel: '3×3', description: 'Классические фокусные точки композиции' },
+  { id: 'golden-ratio', label: 'Золотое сечение (Phi)', shortLabel: 'Phi', description: 'Гармоническая пропорция 1 : 1.618' },
+  { id: 'grid-4x4', label: 'Квадратная сетка 4×4', shortLabel: '4×4', description: 'Равномерное деление на 16 секций' },
+  { id: 'grid-8x8', label: 'Академическая сетка 8×8', shortLabel: '8×8', description: 'Мелкая сетка для точного переноса пропорций' },
+  { id: 'diagonals', label: 'Диагонали и центр', shortLabel: 'Диаг', description: 'Большие диагонали и центральные оси' },
+  { id: 'harmonic-armature', label: 'Гармоническая арматура', shortLabel: 'Арматура', description: 'Каноническая сетка старых мастеров с ромбом' },
+  { id: 'perspective-cross', label: 'Фокусные круги и оси', shortLabel: 'Прицел', description: 'Перекрестие и концентрические круги тонального центра' },
+];
+
+export const CONTRAST_OPTIONS: { id: ContrastMode; label: string; shortLabel: string; description: string }[] = [
+  { id: 'normal', label: 'Обычный контраст', shortLabel: '100%', description: 'Оригинальная светотень фотографии' },
+  { id: 'medium', label: 'Усиленная светотень', shortLabel: 'Светотень +', description: 'Четкое отделение полутонов и собственных теней' },
+  { id: 'high', label: 'Глубокий кьяроскуро', shortLabel: 'Кьяроскуро', description: 'Высокий контраст для анализа границы света и тени (терминатора)' },
+  { id: 'notan', label: 'Нотан (Свет / Тень)', shortLabel: 'Нотан', description: 'Предельный контраст для обобщения пятен света и тени' },
+];
+
+export function getNextGridType(current: GridType): GridType {
+  const idx = GRID_OPTIONS.findIndex(g => g.id === current);
+  if (idx === -1) return 'rule-of-thirds';
+  return GRID_OPTIONS[(idx + 1) % GRID_OPTIONS.length].id;
+}
+
+export function getNextContrastMode(current: ContrastMode): ContrastMode {
+  const idx = CONTRAST_OPTIONS.findIndex(c => c.id === current);
+  if (idx === -1) return 'medium';
+  return CONTRAST_OPTIONS[(idx + 1) % CONTRAST_OPTIONS.length].id;
+}
+
+export function buildReferenceFilterCss(viewSettings: Pick<ViewSettings, 'isGrayscale' | 'isBlurred' | 'contrastMode'>): string {
+  const parts: string[] = [];
+
+  if (viewSettings.isGrayscale || viewSettings.contrastMode === 'notan') {
+    parts.push('grayscale(100%)');
+  }
+
+  if (viewSettings.contrastMode === 'medium') {
+    parts.push('contrast(145%) brightness(102%)');
+  } else if (viewSettings.contrastMode === 'high') {
+    parts.push('contrast(215%) brightness(104%)');
+  } else if (viewSettings.contrastMode === 'notan') {
+    parts.push('contrast(420%) brightness(106%)');
+  }
+
+  if (viewSettings.isBlurred) {
+    parts.push('blur(6px)');
+  }
+
+  return parts.join(' ');
+}
 
 /**
  * Fisher-Yates array shuffle.
@@ -174,3 +233,4 @@ export function jumpToItem(
     activeItem: item,
   };
 }
+

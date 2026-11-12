@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload, Images, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
+import { Upload, Images, Maximize2, Minimize2, RefreshCw, Moon, Sun } from 'lucide-react';
 import { SourceFilter } from '../types/index.ts';
 
 interface HeaderProps {
@@ -15,6 +15,8 @@ interface HeaderProps {
   isRefreshing: boolean;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -30,61 +32,62 @@ export const Header: React.FC<HeaderProps> = ({
   isRefreshing,
   isFullscreen,
   onToggleFullscreen,
+  isDarkMode,
+  onToggleDarkMode,
 }) => {
   return (
-    <header className="w-full border-b border-stone-200/80 bg-[#FAF9F5]/90 backdrop-blur-md sticky top-0 z-30 transition-all">
+    <header className="w-full border-b border-stone-200/80 dark:border-stone-800/80 bg-[#FAF9F5]/90 dark:bg-stone-950/90 backdrop-blur-md sticky top-0 z-30 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-4">
-        {/* Zone 1: Single text element wordmark */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <span className="font-serif-display text-lg sm:text-2xl font-semibold tracking-tight text-stone-900 select-none">
+        {/* Zone 1: Single text element wordmark only */}
+        <div className="flex items-center shrink-0">
+          <span className="font-serif-display text-xl sm:text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 select-none whitespace-nowrap">
             Atelier Ref
-          </span>
-          <span className="text-stone-300 hidden md:inline" aria-hidden="true">|</span>
-          <span className="text-xs text-stone-600 hidden md:inline font-sans-body">
-            Студия референсов
           </span>
         </div>
 
         {/* Zone 2: Source filter navigation (desktop) + compact toggle (mobile) */}
-        <nav className="hidden sm:flex items-center gap-1 sm:gap-2 p-1 bg-stone-200/60 rounded-xl" aria-label="Фильтр источников">
+        <nav
+          className="hidden sm:flex items-center gap-1 sm:gap-1.5 p-1 bg-stone-200/60 dark:bg-stone-900 rounded-xl border border-transparent dark:border-stone-800/80"
+          aria-label="Фильтр источников"
+        >
           <button
             type="button"
             onClick={() => onFilterChange('all')}
-            className={`px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap ${
+            className={`px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               sourceFilter === 'all'
-                ? 'bg-white text-stone-900 shadow-xs'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/40'
+                ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs'
+                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/40 dark:hover:bg-stone-800/50'
             }`}
             aria-label="Показать все референсы"
           >
-            Все <span className="text-stone-600 tabular-nums font-normal">({totalCount})</span>
+            Все <span className="text-stone-500 dark:text-stone-400 tabular-nums font-normal">({totalCount})</span>
           </button>
 
           <button
             type="button"
             onClick={() => onFilterChange('folder')}
-            className={`px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap ${
+            className={`px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap cursor-pointer ${
               sourceFilter === 'folder'
-                ? 'bg-white text-stone-900 shadow-xs'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/40'
+                ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs'
+                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/40 dark:hover:bg-stone-800/50'
             }`}
             aria-label="Показать референсы из встроенной папки"
           >
-            Из папки <span className="text-stone-600 tabular-nums font-normal">({folderCount})</span>
+            Из папки <span className="text-stone-500 dark:text-stone-400 tabular-nums font-normal">({folderCount})</span>
           </button>
 
           {uploadCount > 0 && (
             <button
               type="button"
               onClick={() => onFilterChange('upload')}
-              className={`px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                 sourceFilter === 'upload'
-                  ? 'bg-white text-stone-900 shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/40'
+                  ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/40 dark:hover:bg-stone-800/50'
               }`}
               aria-label="Показать загруженные референсы"
             >
-              Загруженные <span className="text-stone-600 tabular-nums font-normal">({uploadCount})</span>
+              Загруженные <span className="text-stone-500 dark:text-stone-400 tabular-nums font-normal">({uploadCount})</span>
             </button>
           )}
         </nav>
@@ -98,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({
               else if (sourceFilter === 'folder' && uploadCount > 0) onFilterChange('upload');
               else onFilterChange('all');
             }}
-            className="text-[11px] font-medium px-2 py-1 bg-stone-200/70 text-stone-800 rounded-lg"
+            className="text-[11px] font-medium px-2 py-1 bg-stone-200/70 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded-lg cursor-pointer"
             title="Переключить источник (Все / Из папки / Загруженные)"
           >
             {sourceFilter === 'all'
@@ -110,16 +113,30 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Zone 3: Primary action + utility triggers */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={onToggleDarkMode}
+            className="p-1.5 sm:p-2 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/60 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
+            title={isDarkMode ? 'Светлая тема' : 'Тёмная тема (Dark Mode)'}
+            aria-label={isDarkMode ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
+          >
+            {isDarkMode ? (
+              <Sun className="w-4 h-4 text-stone-200" />
+            ) : (
+              <Moon className="w-4 h-4" />
+            )}
+          </button>
+
           <button
             type="button"
             onClick={onRefreshFolder}
             disabled={isRefreshing}
-            className="p-1.5 sm:p-2 text-stone-600 hover:text-stone-900 hover:bg-stone-200/60 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/60 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
             title="Пересканировать папку public/references"
             aria-label="Обновить список файлов из папки"
           >
-            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin text-stone-900' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin text-stone-900 dark:text-stone-100' : ''}`} />
           </button>
 
           <button
@@ -127,8 +144,8 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onToggleGallery}
             className={`flex items-center gap-1 sm:gap-1.5 p-1.5 sm:px-3 sm:py-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
               isGalleryOpen
-                ? 'bg-stone-300/80 text-stone-900'
-                : 'text-stone-700 hover:text-stone-900 hover:bg-stone-200/60'
+                ? 'bg-stone-300/80 dark:bg-stone-800 text-stone-900 dark:text-stone-100'
+                : 'text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/60 dark:hover:bg-stone-800'
             }`}
             aria-label="Открыть галерею миниатюр"
             title="Открыть все референсы (клавиша L)"
@@ -140,7 +157,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onOpenUpload}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-medium text-stone-900 bg-white border border-stone-300/90 rounded-lg shadow-2xs hover:bg-stone-50 hover:border-stone-400 transition-all cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-medium text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 border border-stone-300/90 dark:border-stone-700 rounded-lg shadow-2xs hover:bg-stone-50 dark:hover:bg-stone-800 hover:border-stone-400 dark:hover:border-stone-600 transition-all cursor-pointer whitespace-nowrap"
             aria-label="Загрузить пакет референсов"
             title="Загрузить пакет референсов (клавиша U)"
           >
@@ -151,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onToggleFullscreen}
-            className="hidden md:flex p-2 text-stone-600 hover:text-stone-900 hover:bg-stone-200/60 rounded-lg transition-colors cursor-pointer"
+            className="hidden md:flex p-2 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/60 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
             title={isFullscreen ? 'Выйти из полноэкранного режима' : 'Полноэкранный режим'}
             aria-label={isFullscreen ? 'Выйти из полноэкранного режима' : 'Полноэкранный режим'}
           >

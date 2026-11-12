@@ -1,31 +1,31 @@
 {
-  "updatedAt": "2026-11-11T01:50:00.000Z",
+  "updatedAt": "2026-11-12T08:12:19.542Z",
   "items": [
     {
       "id": "folder-01_sculpture_chiaroscuro.jpg",
-      "name": "Скульптурный свет и светотень (Бюст)",
-      "url": "/references/01_sculpture_chiaroscuro.jpg",
+      "name": "Sculpture chiaroscuro",
+      "url": "./references/01_sculpture_chiaroscuro.jpg",
       "source": "folder",
       "filename": "01_sculpture_chiaroscuro.jpg"
     },
     {
       "id": "folder-02_figure_dancer_study.jpg",
-      "name": "Анатомический этюд: Танцор в прыжке",
-      "url": "/references/02_figure_dancer_study.jpg",
+      "name": "Figure dancer study",
+      "url": "./references/02_figure_dancer_study.jpg",
       "source": "folder",
       "filename": "02_figure_dancer_study.jpg"
     },
     {
       "id": "folder-03_drapery_still_life.jpg",
-      "name": "Академический натюрморт: Складки ткани",
-      "url": "/references/03_drapery_still_life.jpg",
+      "name": "Drapery still life",
+      "url": "./references/03_drapery_still_life.jpg",
       "source": "folder",
       "filename": "03_drapery_still_life.jpg"
     },
     {
       "id": "folder-04_architecture_light_study.jpg",
-      "name": "Архитектурная геометрия и ритм теней",
-      "url": "/references/04_architecture_light_study.jpg",
+      "name": "Architecture light study",
+      "url": "./references/04_architecture_light_study.jpg",
       "source": "folder",
       "filename": "04_architecture_light_study.jpg"
     }

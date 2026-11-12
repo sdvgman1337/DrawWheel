@@ -57,6 +57,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
         filename: file.name,
         sizeBytes: file.size,
         addedAt: Date.now(),
+        blob: file,
       };
       items.push(item);
 
@@ -121,25 +122,25 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/50 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className="w-full max-w-xl bg-[#FAF9F5] border border-stone-300/80 rounded-2xl shadow-2xl p-6 relative flex flex-col max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-xl bg-[#FAF9F5] dark:bg-stone-900 border border-stone-300/80 dark:border-stone-800 rounded-2xl shadow-2xl p-6 relative flex flex-col max-h-[90vh] overflow-y-auto text-stone-900 dark:text-stone-100"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-stone-200">
+        <div className="flex items-center justify-between pb-4 border-b border-stone-200 dark:border-stone-800">
           <div>
-            <h3 className="font-serif-display text-xl font-semibold text-stone-900">
+            <h3 className="font-serif-display text-xl font-semibold text-stone-900 dark:text-stone-100">
               Пакетная загрузка референсов
             </h3>
-            <p className="text-xs text-stone-600 font-sans-body mt-0.5">
+            <p className="text-xs text-stone-600 dark:text-stone-400 font-sans-body mt-0.5">
               Загрузите десятки или сотни фото разом для моментальной генерации
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/60 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/60 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
             aria-label="Закрыть модальное окно"
           >
             <X className="w-5 h-5" />
@@ -153,18 +154,18 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
           onDrop={onDrop}
           className={`mt-5 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all ${
             isDragging
-              ? 'border-stone-900 bg-stone-100/80 scale-[1.01]'
-              : 'border-stone-300 hover:border-stone-400 bg-white/60'
+              ? 'border-stone-900 dark:border-stone-100 bg-stone-100/80 dark:bg-stone-800/80 scale-[1.01]'
+              : 'border-stone-300 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-600 bg-white/60 dark:bg-stone-950/50'
           }`}
         >
-          <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center text-stone-700 mb-3 shadow-2xs">
+          <div className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-700 dark:text-stone-200 mb-3 shadow-2xs">
             <Upload className="w-6 h-6" />
           </div>
 
-          <p className="text-sm font-medium text-stone-800 mb-1">
+          <p className="text-sm font-medium text-stone-800 dark:text-stone-200 mb-1">
             Перетащите сюда пакет фотографий или целую папку
           </p>
-          <p className="text-xs text-stone-600 mb-5 max-w-xs">
+          <p className="text-xs text-stone-600 dark:text-stone-400 mb-5 max-w-xs">
             Поддерживаются JPG, PNG, WEBP, AVIF. Можно выбрать 50, 100 и более файлов сразу.
           </p>
 
@@ -174,7 +175,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isProcessing}
-              className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-xs font-medium rounded-lg hover:bg-stone-800 transition-colors shadow-2xs cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-950 text-xs font-medium rounded-lg hover:bg-stone-800 dark:hover:bg-white transition-colors shadow-2xs cursor-pointer"
             >
               <FileImage className="w-3.5 h-3.5" />
               <span>Выбрать файлы (пакет)</span>
@@ -184,7 +185,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
               type="button"
               onClick={() => folderInputRef.current?.click()}
               disabled={isProcessing}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-stone-800 border border-stone-300 text-xs font-medium rounded-lg hover:bg-stone-50 transition-colors shadow-2xs cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 text-xs font-medium rounded-lg hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors shadow-2xs cursor-pointer"
             >
               <Folder className="w-3.5 h-3.5" />
               <span>Выбрать всю папку целиком</span>
@@ -200,7 +201,6 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
             className="hidden"
             onChange={e => e.target.files && handleFiles(e.target.files)}
           />
-          {/* webkitdirectory allows selecting an entire directory */}
           <input
             ref={folderInputRef}
             type="file"
@@ -214,38 +214,45 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
         </div>
 
         {/* Options */}
-        <div className="mt-4 pt-4 border-t border-stone-200/80 flex flex-col gap-2.5 text-xs text-stone-600">
+        <div className="mt-4 pt-4 border-t border-stone-200/80 dark:border-stone-800 flex flex-col gap-2.5 text-xs text-stone-600 dark:text-stone-400">
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={saveToFolderOnDisk}
               onChange={e => setSaveToFolderOnDisk(e.target.checked)}
-              className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-500"
+              className="w-4 h-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 focus:ring-stone-500"
             />
-            <span className="flex items-center gap-1.5 font-medium text-stone-800">
-              <HardDrive className="w-3.5 h-3.5 text-stone-600" />
-              Копировать файлы в корневую папку сайта <code className="text-stone-700 bg-stone-200/60 px-1 py-0.5 rounded font-mono text-[11px]">public/references</code>
+            <span className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-stone-200">
+              <HardDrive className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
+              Копировать файлы в корневую папку сайта{' '}
+              <code className="text-stone-700 dark:text-stone-200 bg-stone-200/60 dark:bg-stone-800 px-1 py-0.5 rounded font-mono text-[11px]">
+                public/references
+              </code>
             </span>
           </label>
 
-          <div className="p-3 bg-stone-100/80 rounded-xl text-stone-600 leading-relaxed text-[11px] border border-stone-200/60">
-            <span className="font-semibold text-stone-800">💡 Совет для художников: </span>
-            Вы можете один раз положить любые файлы прямо в папку <code className="font-mono bg-white px-1 py-0.5 rounded text-stone-900 border border-stone-200">references/</code> в корне проекта. Они будут всегда отображаться автоматически без повторной выгрузки!
+          <div className="p-3 bg-stone-100/80 dark:bg-stone-950/60 rounded-xl text-stone-600 dark:text-stone-400 leading-relaxed text-[11px] border border-stone-200/60 dark:border-stone-800">
+            <span className="font-semibold text-stone-800 dark:text-stone-200">Совет для художников: </span>
+            Вы можете один раз положить любые файлы прямо в папку{' '}
+            <code className="font-mono bg-white dark:bg-stone-900 px-1 py-0.5 rounded text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700">
+              references/
+            </code>{' '}
+            в корне проекта. Они будут всегда отображаться автоматически без повторной выгрузки!
           </div>
         </div>
 
         {/* Progress indicator */}
         {isProcessing && (
-          <div className="mt-4 p-3 bg-stone-100 rounded-xl">
-            <div className="flex items-center justify-between text-xs text-stone-700 mb-1.5">
+          <div className="mt-4 p-3 bg-stone-100 dark:bg-stone-800 rounded-xl">
+            <div className="flex items-center justify-between text-xs text-stone-700 dark:text-stone-300 mb-1.5">
               <span>Обработка фотографий...</span>
               <span className="tabular-nums font-mono">
                 {processedCount} / {totalToProcess}
               </span>
             </div>
-            <div className="w-full h-1.5 bg-stone-200 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
               <div
-                className="h-full bg-stone-900 transition-all duration-150"
+                className="h-full bg-stone-900 dark:bg-stone-100 transition-all duration-150"
                 style={{ width: `${(processedCount / totalToProcess) * 100}%` }}
               />
             </div>
@@ -254,18 +261,18 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
 
         {/* Status Message */}
         {statusMessage && (
-          <div className="mt-3 p-2.5 bg-stone-100 border border-stone-200 rounded-lg flex items-center gap-2 text-xs text-stone-800">
-            <Check className="w-4 h-4 text-stone-700 shrink-0" />
+          <div className="mt-3 p-2.5 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200">
+            <Check className="w-4 h-4 text-stone-700 dark:text-stone-300 shrink-0" />
             <span>{statusMessage}</span>
           </div>
         )}
 
         {/* Done button */}
-        <div className="mt-5 pt-3 border-t border-stone-200 flex justify-end">
+        <div className="mt-5 pt-3 border-t border-stone-200 dark:border-stone-800 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-stone-900 text-white text-xs font-medium rounded-lg hover:bg-stone-800 transition-colors cursor-pointer"
+            className="px-5 py-2 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-950 text-xs font-medium rounded-lg hover:bg-stone-800 dark:hover:bg-white transition-colors cursor-pointer"
           >
             Готово
           </button>

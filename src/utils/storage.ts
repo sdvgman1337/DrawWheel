@@ -31,7 +31,19 @@ export async function getStoredUploadedReferences(): Promise<ReferenceItem[]> {
       const store = transaction.objectStore(STORE_NAME);
       const request = store.getAll();
 
-      request.onsuccess = () => resolve(request.result as ReferenceItem[]);
+      request.onsuccess = () => {
+        const rawItems = (request.result as ReferenceItem[]) || [];
+        const hydrated = rawItems.map((item) => {
+          if (item.blob instanceof Blob) {
+            return {
+              ...item,
+              url: URL.createObjectURL(item.blob),
+            };
+          }
+          return item;
+        });
+        resolve(hydrated);
+      };
       request.onerror = () => reject(request.error);
     });
   } catch (err) {
