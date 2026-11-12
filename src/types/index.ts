@@ -2,6 +2,7 @@ export interface ReferenceItem {
   id: string;
   name: string;
   url: string;
+  fallbackUrl?: string;
   source: 'folder' | 'upload';
   filename?: string;
   sizeBytes?: number;

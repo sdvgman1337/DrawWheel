@@ -50,6 +50,7 @@ const DEFAULT_FOLDER_ITEMS: ReferenceItem[] = [
     id: 'folder-01_sculpture_chiaroscuro.jpg',
     name: 'Скульптурный свет и светотень (Бюст)',
     url: './references/01_sculpture_chiaroscuro.jpg',
+    fallbackUrl: 'https://images.unsplash.com/photo-1544531586-fde5298cdd40?auto=format&fit=crop&w=1400&q=85',
     source: 'folder',
     filename: '01_sculpture_chiaroscuro.jpg',
   },
@@ -57,6 +58,7 @@ const DEFAULT_FOLDER_ITEMS: ReferenceItem[] = [
     id: 'folder-02_figure_dancer_study.jpg',
     name: 'Анатомический этюд: Танцор в прыжке',
     url: './references/02_figure_dancer_study.jpg',
+    fallbackUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=1400&q=85',
     source: 'folder',
     filename: '02_figure_dancer_study.jpg',
   },
@@ -64,6 +66,7 @@ const DEFAULT_FOLDER_ITEMS: ReferenceItem[] = [
     id: 'folder-03_drapery_still_life.jpg',
     name: 'Академический натюрморт: Складки ткани',
     url: './references/03_drapery_still_life.jpg',
+    fallbackUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1400&q=85',
     source: 'folder',
     filename: '03_drapery_still_life.jpg',
   },
@@ -71,6 +74,7 @@ const DEFAULT_FOLDER_ITEMS: ReferenceItem[] = [
     id: 'folder-04_architecture_light_study.jpg',
     name: 'Архитектурная геометрия и ритм теней',
     url: './references/04_architecture_light_study.jpg',
+    fallbackUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1400&q=85',
     source: 'folder',
     filename: '04_architecture_light_study.jpg',
   },
@@ -196,15 +200,26 @@ export default function App() {
         }
       }
 
-      const manifestRes = await fetch('./references/manifest.json');
-      if (manifestRes.ok) {
-        const manifestData = await manifestRes.json();
+      const manifestRes = await fetch('./references/manifest.json').catch(() => null);
+      const finalManifestRes =
+        manifestRes && manifestRes.ok
+          ? manifestRes
+          : await fetch('./public/references/manifest.json').catch(() => null);
+
+      if (finalManifestRes && finalManifestRes.ok) {
+        const manifestData = await finalManifestRes.json();
         if (Array.isArray(manifestData.items) && manifestData.items.length > 0) {
           setFolderItems(
-            manifestData.items.map((item: ReferenceItem) => ({
-              ...item,
-              url: item.url.startsWith('/') ? `.${item.url}` : item.url,
-            }))
+            manifestData.items.map((item: ReferenceItem) => {
+              const defaultMatch = DEFAULT_FOLDER_ITEMS.find(
+                d => d.id === item.id || d.filename === item.filename
+              );
+              return {
+                ...item,
+                url: item.url.startsWith('/') ? `.${item.url}` : item.url,
+                fallbackUrl: item.fallbackUrl || defaultMatch?.fallbackUrl,
+              };
+            })
           );
         }
       }

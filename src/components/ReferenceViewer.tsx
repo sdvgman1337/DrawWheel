@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import {
   ReferenceItem,
   ViewSettings,
@@ -202,6 +201,8 @@ export const ReferenceViewer: React.FC<ReferenceViewerProps> = ({
   imageRef,
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [resolvedSrc, setResolvedSrc] = useState<string>('');
+  const [fallbackStage, setFallbackStage] = useState<number>(0);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
@@ -216,7 +217,9 @@ export const ReferenceViewer: React.FC<ReferenceViewerProps> = ({
   useEffect(() => {
     setPanOffset({ x: 0, y: 0 });
     setImageError(false);
-  }, [activeItem?.id, viewSettings.zoom]);
+    setFallbackStage(0);
+    setResolvedSrc(activeItem?.url || '');
+  }, [activeItem?.id, activeItem?.url, viewSettings.zoom]);
 
   // Observe reference image dimensions so transparent canvas overlay matches 1:1
   const syncCanvasDimensions = useCallback(() => {
@@ -444,78 +447,82 @@ export const ReferenceViewer: React.FC<ReferenceViewerProps> = ({
     >
       {/* Passe-partout gallery matting frame */}
       <div className="relative w-full h-full max-w-6xl flex items-center justify-center">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeItem.id}
-            initial={{ opacity: 0, scale: 0.985 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.015 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full h-full flex items-center justify-center"
-            onDoubleClick={handleDoubleClick}
-            title={
-              sketchSettings.isDrawingMode
-                ? 'Режим наброска поверх референса'
-                : 'Двойной клик — следующий случайный референс'
-            }
-          >
-            {imageError ? (
-              <div className="w-full max-w-lg aspect-4/3 rounded-2xl bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 flex flex-col items-center justify-center p-6 text-center text-stone-500 dark:text-stone-400">
-                <ImageOff className="w-12 h-12 mb-3 text-stone-400 dark:text-stone-600" />
-                <p className="text-sm font-medium text-stone-800 dark:text-stone-200 mb-1">
-                  Не удалось загрузить изображение
-                </p>
-                <p className="text-xs text-stone-500 dark:text-stone-400">
-                  {activeItem.filename || activeItem.name}
-                </p>
-              </div>
-            ) : (
-              <div
-                style={containerTransformStyle}
-                className="relative max-w-full max-h-full flex items-center justify-center shadow-xl shadow-stone-900/5 dark:shadow-black/50 rounded-lg overflow-hidden bg-white/40 dark:bg-stone-900/40 ring-1 ring-stone-900/5 dark:ring-white/10 will-change-transform"
-              >
-                <img
-                  ref={imageRef}
-                  src={activeItem.url}
-                  alt={activeItem.name}
-                  crossOrigin="anonymous"
-                  referrerPolicy="no-referrer"
-                  style={{
-                    filter: filterStyles || undefined,
-                    transition: 'filter 0.2s ease',
-                  }}
-                  onLoad={syncCanvasDimensions}
-                  onError={() => setImageError(true)}
-                  className="max-h-[calc(100dvh-9rem)] max-w-full object-contain pointer-events-auto rounded-md block"
-                  draggable={false}
-                />
+        <div
+          key={activeItem.id}
+          className="relative w-full h-full flex items-center justify-center animate-in fade-in duration-200"
+          onDoubleClick={handleDoubleClick}
+          title={
+            sketchSettings.isDrawingMode
+              ? 'Режим наброска поверх референса'
+              : 'Двойной клик — следующий случайный референс'
+          }
+        >
+          {imageError ? (
+            <div className="w-full max-w-lg aspect-4/3 rounded-2xl bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 flex flex-col items-center justify-center p-6 text-center text-stone-500 dark:text-stone-400">
+              <ImageOff className="w-12 h-12 mb-3 text-stone-400 dark:text-stone-600" />
+              <p className="text-sm font-medium text-stone-800 dark:text-stone-200 mb-1">
+                Не удалось загрузить изображение
+              </p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                {activeItem.filename || activeItem.name}
+              </p>
+            </div>
+          ) : (
+            <div
+              style={containerTransformStyle}
+              className="relative max-w-full max-h-full flex items-center justify-center shadow-xl shadow-stone-900/5 dark:shadow-black/50 rounded-lg overflow-hidden bg-white/40 dark:bg-stone-900/40 ring-1 ring-stone-900/5 dark:ring-white/10 will-change-transform"
+            >
+              <img
+                ref={imageRef}
+                src={resolvedSrc || activeItem.url}
+                alt={activeItem.name}
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+                style={{
+                  filter: filterStyles || undefined,
+                  transition: 'filter 0.2s ease',
+                }}
+                onLoad={syncCanvasDimensions}
+                onError={() => {
+                  if (fallbackStage === 0 && activeItem.filename) {
+                    setFallbackStage(1);
+                    setResolvedSrc(`./public/references/${activeItem.filename}`);
+                  } else if (fallbackStage <= 1 && activeItem.fallbackUrl) {
+                    setFallbackStage(2);
+                    setResolvedSrc(activeItem.fallbackUrl);
+                  } else {
+                    setImageError(true);
+                  }
+                }}
+                className="max-h-[calc(100dvh-9rem)] max-w-full object-contain pointer-events-auto rounded-md block"
+                draggable={false}
+              />
 
-                {/* Transparent Drawing Canvas Overlay sitting directly on top of the reference */}
-                <canvas
-                  ref={canvasRef}
-                  data-testid="drawing-canvas"
-                  width={canvasSize.width}
-                  height={canvasSize.height}
-                  onPointerDown={handleCanvasPointerDown}
-                  onPointerMove={handleCanvasPointerMove}
-                  onPointerUp={finishDrawingStroke}
-                  onPointerCancel={finishDrawingStroke}
-                  style={{
-                    touchAction: sketchSettings.isDrawingMode ? 'none' : 'auto',
-                  }}
-                  className={`absolute inset-0 w-full h-full z-15 transition-opacity duration-150 ${
-                    sketchSettings.isDrawingMode
-                      ? 'pointer-events-auto cursor-crosshair'
-                      : 'pointer-events-none'
-                  } ${sketchSettings.isOverlayVisible ? 'opacity-100' : 'opacity-0'}`}
-                />
+              {/* Transparent Drawing Canvas Overlay sitting directly on top of the reference */}
+              <canvas
+                ref={canvasRef}
+                data-testid="drawing-canvas"
+                width={canvasSize.width}
+                height={canvasSize.height}
+                onPointerDown={handleCanvasPointerDown}
+                onPointerMove={handleCanvasPointerMove}
+                onPointerUp={finishDrawingStroke}
+                onPointerCancel={finishDrawingStroke}
+                style={{
+                  touchAction: sketchSettings.isDrawingMode ? 'none' : 'auto',
+                }}
+                className={`absolute inset-0 w-full h-full z-15 transition-opacity duration-150 ${
+                  sketchSettings.isDrawingMode
+                    ? 'pointer-events-auto cursor-crosshair'
+                    : 'pointer-events-none'
+                } ${sketchSettings.isOverlayVisible ? 'opacity-100' : 'opacity-0'}`}
+              />
 
-                {/* Expanded Composition & Academic Grids Overlay */}
-                <CompositionGridOverlay gridType={viewSettings.gridType} />
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+              {/* Expanded Composition & Academic Grids Overlay */}
+              <CompositionGridOverlay gridType={viewSettings.gridType} />
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

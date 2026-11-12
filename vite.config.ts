@@ -73,9 +73,12 @@ function referencesFolderPlugin(): Plugin {
       order: 'pre',
       handler(html) {
         return html
-          .replace(/<link[^>]*data-standalone-css[^>]*>\s*/i, '')
+          .replace(/<script[^>]*data-standalone-importmap[^>]*>[\s\S]*?<\/script>\s*/gi, '')
+          .replace(/<script[^>]*data-standalone-css[^>]*>[\s\S]*?<\/script>\s*/gi, '')
+          .replace(/<style[^>]*data-standalone-css[^>]*>[\s\S]*?<\/style>\s*/gi, '')
+          .replace(/<link[^>]*data-standalone-css[^>]*>\s*/gi, '')
           .replace(
-            /<script[^>]*data-standalone-js[^>]*><\/script>/i,
+            /<script[^>]*data-standalone-js[^>]*>[\s\S]*?<\/script>/i,
             '<script type="module" src="/src/main.tsx"></script>'
           );
       },

@@ -78,6 +78,16 @@ export const GalleryDrawer: React.FC<GalleryDrawerProps> = ({
                         src={item.url}
                         alt={item.name}
                         loading="lazy"
+                        onError={e => {
+                          const target = e.currentTarget;
+                          if (!target.dataset.triedPublic && item.filename) {
+                            target.dataset.triedPublic = '1';
+                            target.src = `./public/references/${item.filename}`;
+                          } else if (!target.dataset.triedFallback && item.fallbackUrl) {
+                            target.dataset.triedFallback = '1';
+                            target.src = item.fallbackUrl;
+                          }
+                        }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
